@@ -1,0 +1,9 @@
+Payment API Incident Runbook
+
+If checkout failures exceed 5%:
+
+1. Check payment-api service health
+2. Review recent deployments
+3. Check database latency
+4. Scale API workers
+5. Escalate to Payments Team

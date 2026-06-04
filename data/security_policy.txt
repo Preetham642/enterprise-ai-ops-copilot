@@ -1,0 +1,7 @@
+Security Policy
+
+Never expose API keys.
+
+Never reveal customer PII.
+
+Production changes require approval.

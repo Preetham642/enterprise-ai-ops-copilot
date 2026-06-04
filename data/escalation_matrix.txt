@@ -1,0 +1,13 @@
+Escalation Matrix
+
+Severity 1:
+Customer-facing outage.
+Notify Incident Commander immediately.
+
+Severity 2:
+Degraded service.
+Notify Service Owner within 30 minutes.
+
+Severity 3:
+Minor issue.
+Track in sprint backlog.
