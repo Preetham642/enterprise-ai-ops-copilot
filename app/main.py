@@ -1,4 +1,5 @@
 from app.rag import load_documents, search_documents
+from app.database import init_db, get_all_tickets
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.rag_chat import ask_rag
@@ -18,6 +19,7 @@ app = FastAPI(
     title="Enterprise AI Operations Copilot",
     version="1.0.0"
 )
+init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,6 +91,34 @@ def rag_chat(request: ChatRequest):
 @app.post("/workflow/incident")
 def incident_workflow_endpoint(request: ChatRequest):
     return run_incident_workflow(request.message)
+
+@app.get("/logs")
+def get_logs():
+    try:
+        with open("logs/app.log", "r") as f:
+            lines = f.readlines()
+
+        filtered_logs = [
+            line for line in lines
+            if "change detected" not in line
+            and "changes detected" not in line
+        ]
+
+        return {
+            "logs": filtered_logs[-100:]
+        }
+
+    except Exception as e:
+        return {
+            "logs": [],
+            "error": str(e)
+        }
+    
+@app.get("/tickets")
+def tickets():
+    return {
+        "tickets": get_all_tickets()
+    }
 
 @app.post("/chat")
 def chat(request: ChatRequest):
