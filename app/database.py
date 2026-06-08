@@ -67,3 +67,25 @@ def get_all_tickets():
         }
         for row in rows
     ]
+
+def get_ticket_metrics():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM tickets")
+    total_tickets = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM tickets WHERE status = 'CREATED'")
+    open_tickets = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM tickets WHERE severity = 'SEV-1'")
+    critical_alerts = cursor.fetchone()[0]
+
+    conn.close()
+
+    return {
+        "incidents_today": total_tickets,
+        "open_tickets": open_tickets,
+        "critical_alerts": critical_alerts,
+        "system_health": "98%"
+    }

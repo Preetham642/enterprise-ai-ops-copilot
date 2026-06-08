@@ -1,5 +1,6 @@
 from app.rag import load_documents, search_documents
 from app.database import init_db, get_all_tickets
+from app.database import get_ticket_metrics
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.rag_chat import ask_rag
@@ -119,6 +120,10 @@ def tickets():
     return {
         "tickets": get_all_tickets()
     }
+
+@app.get("/metrics")
+def metrics():
+    return get_ticket_metrics()
 
 @app.post("/chat")
 def chat(request: ChatRequest):

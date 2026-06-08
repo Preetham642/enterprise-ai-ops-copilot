@@ -165,12 +165,45 @@ function Header({ title }) {
 }
 
 function Metrics() {
+  const [metrics, setMetrics] = useState({
+    incidents_today: 0,
+    open_tickets: 0,
+    critical_alerts: 0,
+    system_health: "0%"
+  });
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/metrics")
+      .then((res) => res.json())
+      .then((data) => {
+        setMetrics(data);
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <div className="grid grid-cols-4 gap-4 mt-8">
-      <Metric title="Incidents Today" value="12" />
-      <Metric title="Open Tickets" value="5" />
-      <Metric title="Critical Alerts" value="1" color="text-red-400" />
-      <Metric title="System Health" value="98%" color="text-emerald-400" />
+      <Metric
+        title="Incidents Today"
+        value={metrics.incidents_today}
+      />
+
+      <Metric
+        title="Open Tickets"
+        value={metrics.open_tickets}
+      />
+
+      <Metric
+        title="Critical Alerts"
+        value={metrics.critical_alerts}
+        color="text-red-400"
+      />
+
+      <Metric
+        title="System Health"
+        value={metrics.system_health}
+        color="text-emerald-400"
+      />
     </div>
   );
 }
