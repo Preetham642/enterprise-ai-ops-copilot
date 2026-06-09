@@ -53,6 +53,7 @@ function App() {
           {menuItem("knowledge", "📚 Knowledge Base")}
           {menuItem("tickets", "🎫 Tickets")}
           {menuItem("logs", "📈 Logs")}
+          {menuItem("analytics", "📊 Analytics")}
         </div>
       </aside>
 
@@ -120,6 +121,7 @@ function App() {
         {activePage === "knowledge" && <KnowledgeBase />}
         {activePage === "tickets" && <Tickets />}
         {activePage === "logs" && <Logs />}
+        {activePage === "analytics" && <Analytics />}
       </main>
     </div>
   );
@@ -181,26 +183,41 @@ function RightPanel({ result }) {
     <div className="space-y-6">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
         <h3 className="text-slate-400">Service Status</h3>
+
         <p className="text-3xl mt-3">
-          {result?.service_status?.service || "Waiting"}
+          {result?.incident_context?.service ||
+            result?.service_status?.service ||
+            "Waiting"}
         </p>
+
         <div className="mt-3 inline-block bg-red-900 text-red-300 px-3 py-1 rounded-full">
           {result?.service_status?.status || "Waiting"}
         </div>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+        <h3 className="text-slate-400">Severity</h3>
+
+        <p className="text-3xl mt-3">
+          {result?.incident_context?.severity || "Waiting"}
+        </p>
+      </div>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
         <h3 className="text-slate-400">Incident Ticket</h3>
+
         <p className="text-3xl mt-3">
           {result?.ticket?.ticket_id || "No ticket yet"}
         </p>
+
         <p className="text-slate-400 mt-2">
-          {result?.ticket?.assigned_team || ""}
+          Team: {result?.ticket?.assigned_team || "Waiting"}
         </p>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
         <h3 className="text-slate-400">Sources Used</h3>
+
         <ul className="mt-4 space-y-2">
           {(result?.sources || []).map((source) => (
             <li key={source}>📄 {source}</li>
@@ -213,6 +230,7 @@ function RightPanel({ result }) {
 
         <div className="mt-5 space-y-5">
           {[
+            ["Detected Incident Type", result?.incident_context?.summary || "Waiting"],
             ["Retrieved Documents", "Searched enterprise knowledge base"],
             ["Checked Service Status", "Verified service health"],
             ["Created Incident Ticket", result?.ticket?.ticket_id || "Waiting"],
@@ -222,6 +240,7 @@ function RightPanel({ result }) {
               <div className="w-7 h-7 rounded-full bg-emerald-500 text-black flex items-center justify-center text-sm font-bold">
                 ✓
               </div>
+
               <div>
                 <p className="font-semibold text-slate-200">{title}</p>
                 <p className="text-sm text-slate-400">{detail}</p>
@@ -411,6 +430,63 @@ function Logs() {
         ) : (
           logs.map((log, index) => <p key={index}>{log}</p>)
         )}
+      </div>
+    </>
+  );
+}
+
+function Analytics() {
+  const [tickets, setTickets] = useState([]);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/tickets")
+      .then((res) => res.json())
+      .then((data) => setTickets(data.tickets || []))
+      .catch(console.error);
+  }, []);
+
+  const sev1 = tickets.filter((t) => t.severity === "SEV-1").length;
+  const sev2 = tickets.filter((t) => t.severity === "SEV-2").length;
+  const sev3 = tickets.filter((t) => t.severity === "SEV-3").length;
+
+  const teams = tickets.reduce((acc, ticket) => {
+    acc[ticket.assigned_team] = (acc[ticket.assigned_team] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <>
+      <Header title="Incident Analytics" />
+
+      <div className="grid grid-cols-3 gap-6 mt-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 className="text-slate-400 mb-4">Incidents by Severity</h3>
+          <p className="text-2xl">SEV-1: {sev1}</p>
+          <p className="text-2xl mt-2">SEV-2: {sev2}</p>
+          <p className="text-2xl mt-2">SEV-3: {sev3}</p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 className="text-slate-400 mb-4">Incidents by Team</h3>
+
+          {Object.keys(teams).length === 0 ? (
+            <p className="text-slate-500">No team data yet.</p>
+          ) : (
+            Object.entries(teams).map(([team, count]) => (
+              <p key={team} className="text-lg mt-2">
+                {team}: {count}
+              </p>
+            ))
+          )}
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <h3 className="text-slate-400 mb-4">Ticket Summary</h3>
+          <p className="text-2xl">Total Tickets: {tickets.length}</p>
+          <p className="text-2xl mt-2">
+            Open Tickets: {tickets.filter((t) => t.status === "CREATED").length}
+          </p>
+        </div>
       </div>
     </>
   );

@@ -2,7 +2,11 @@ from app.database import create_ticket_record
 from datetime import datetime
 
 
-def create_incident_ticket(summary: str, severity: str):
+def create_incident_ticket(
+    summary: str,
+    severity: str,
+    assigned_team: str
+):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
     ticket = {
@@ -10,7 +14,7 @@ def create_incident_ticket(summary: str, severity: str):
         "summary": summary,
         "severity": severity,
         "status": "CREATED",
-        "assigned_team": "Payments Engineering"
+        "assigned_team": assigned_team
     }
 
     create_ticket_record(
