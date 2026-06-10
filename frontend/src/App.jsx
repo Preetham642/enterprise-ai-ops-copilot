@@ -97,6 +97,36 @@ function App() {
                       </p>
                     </div>
 
+                    {result?.web_results?.length > 0 && (
+  <div className="bg-black border border-slate-800 rounded-xl p-5">
+    <p className="text-slate-400 text-sm">
+      Live Web Sources
+    </p>
+
+    <div className="mt-4 space-y-4">
+      {result.web_results.map((item, index) => (
+        <div
+          key={index}
+          className="border border-slate-700 rounded-lg p-3"
+        >
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-400 font-semibold"
+          >
+            {item.title}
+          </a>
+
+          <p className="text-slate-300 mt-2">
+            {item.content}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
                     <div className="bg-black border border-slate-800 rounded-xl p-5">
                       <p className="text-slate-400 text-sm">
                         Recommended Follow-Up

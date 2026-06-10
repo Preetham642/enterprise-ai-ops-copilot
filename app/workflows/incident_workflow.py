@@ -1,6 +1,7 @@
 from typing import TypedDict, List, Dict, Any
 from langgraph.graph import StateGraph, START, END
 from app.logger import logger
+from app.tools.web_search_tool import search_web
 from app.tools.incident_router import detect_incident_context
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -18,6 +19,7 @@ class IncidentState(TypedDict):
     question: str
     incident_context: Dict[str, Any]
     documents: List[Dict[str, Any]]
+    web_results: List[Dict[str, Any]]
     service_status: Dict[str, Any]
     ticket: Dict[str, Any]
     answer: str
@@ -45,6 +47,18 @@ def retrieve_documents_node(state: IncidentState):
 
     return {
         "documents": documents
+    }
+
+
+def web_search_node(state: IncidentState):
+    logger.info("Running live web search")
+
+    web_results = search_web(state["question"])
+
+    logger.info(f"Retrieved {len(web_results)} web results")
+
+    return {
+        "web_results": web_results
     }
 
 
@@ -83,10 +97,17 @@ def create_ticket_node(state: IncidentState):
 def generate_answer_node(state: IncidentState):
     logger.info("Generating AI response")
 
-    context = "\n\n".join(
+    document_context = "\n\n".join(
         [
             f"Source: {doc['source']}\nContent: {doc['content']}"
             for doc in state["documents"]
+        ]
+    )
+
+    web_context = "\n\n".join(
+        [
+            f"Title: {item.get('title')}\nURL: {item.get('url')}\nContent: {item.get('content')}"
+            for item in state["web_results"]
         ]
     )
 
@@ -98,27 +119,31 @@ def generate_answer_node(state: IncidentState):
                 "content": f"""
 You are an Enterprise AI Operations Copilot.
 
-Analyze the user's incident based on:
+Analyze the user's incident using:
 1. The actual user question
-2. The detected incident context
-3. The retrieved company documents
-4. The service status
-5. The created ticket
+2. Detected incident context
+3. Retrieved internal company documents
+4. Live web search results
+5. Current service status
+6. Created ticket data
 
 Do not assume every incident is payment-related.
 Use the detected service, severity, and assigned team.
 
 Detected Incident Context:
-{state['incident_context']}
+{state["incident_context"]}
 
-Company Documents:
-{context}
+Internal Company Documents:
+{document_context}
+
+Live Web Search Results:
+{web_context}
 
 Service Status:
-{state['service_status']}
+{state["service_status"]}
 
 Ticket:
-{state['ticket']}
+{state["ticket"]}
 
 Return the answer in this format:
 
@@ -150,13 +175,15 @@ def build_incident_workflow():
 
     graph.add_node("detect_incident", detect_incident_node)
     graph.add_node("retrieve_documents", retrieve_documents_node)
+    graph.add_node("web_search", web_search_node)
     graph.add_node("check_service", check_service_node)
     graph.add_node("create_ticket", create_ticket_node)
     graph.add_node("generate_answer", generate_answer_node)
 
     graph.add_edge(START, "detect_incident")
     graph.add_edge("detect_incident", "retrieve_documents")
-    graph.add_edge("retrieve_documents", "check_service")
+    graph.add_edge("retrieve_documents", "web_search")
+    graph.add_edge("web_search", "check_service")
     graph.add_edge("check_service", "create_ticket")
     graph.add_edge("create_ticket", "generate_answer")
     graph.add_edge("generate_answer", END)
@@ -172,6 +199,7 @@ def run_incident_workflow(question: str):
         "question": question,
         "incident_context": {},
         "documents": [],
+        "web_results": [],
         "service_status": {},
         "ticket": {},
         "answer": ""
@@ -183,10 +211,12 @@ def run_incident_workflow(question: str):
         "sources": list(set([doc["source"] for doc in result["documents"]])),
         "service_status": result["service_status"],
         "ticket": result["ticket"],
+        "web_results": result["web_results"],
         "incident_context": result["incident_context"],
         "workflow_steps": [
             "detect_incident",
             "retrieve_documents",
+            "web_search",
             "check_service",
             "create_ticket",
             "generate_answer"
