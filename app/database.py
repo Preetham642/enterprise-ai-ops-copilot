@@ -89,3 +89,16 @@ def get_ticket_metrics():
         "critical_alerts": critical_alerts,
         "system_health": "98%"
     }
+
+def update_ticket_status(ticket_id, status):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE tickets
+        SET status = ?
+        WHERE ticket_id = ?
+    """, (status, ticket_id))
+
+    conn.commit()
+    conn.close()

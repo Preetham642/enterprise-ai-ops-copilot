@@ -353,12 +353,27 @@ function KnowledgeBase() {
 function Tickets() {
   const [tickets, setTickets] = useState([]);
 
-  useEffect(() => {
+  const loadTickets = () => {
     fetch("http://127.0.0.1:8000/tickets")
       .then((res) => res.json())
       .then((data) => setTickets(data.tickets || []))
       .catch(console.error);
+  };
+
+  useEffect(() => {
+    loadTickets();
   }, []);
+
+  const updateStatus = async (ticketId, status) => {
+    await fetch(
+      `http://127.0.0.1:8000/tickets/${ticketId}/status?status=${status}`,
+      {
+        method: "PUT",
+      }
+    );
+
+    loadTickets();
+  };
 
   return (
     <>
@@ -380,13 +395,14 @@ function Tickets() {
                 <th className="p-4">Status</th>
                 <th className="p-4">Assigned Team</th>
                 <th className="p-4">Created At</th>
+                <th className="p-4">Actions</th>
               </tr>
             </thead>
 
             <tbody>
               {tickets.length === 0 ? (
                 <tr>
-                  <td className="p-4 text-slate-400" colSpan="6">
+                  <td className="p-4 text-slate-400" colSpan="7">
                     No tickets found.
                   </td>
                 </tr>
@@ -399,6 +415,36 @@ function Tickets() {
                     <td className="p-4 text-emerald-400">{ticket.status}</td>
                     <td className="p-4">{ticket.assigned_team}</td>
                     <td className="p-4 text-slate-400">{ticket.created_at}</td>
+                    <td className="p-4">
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          onClick={() =>
+                            updateStatus(ticket.ticket_id, "IN_PROGRESS")
+                          }
+                          className="bg-yellow-700 hover:bg-yellow-600 px-3 py-1 rounded-lg text-sm"
+                        >
+                          In Progress
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(ticket.ticket_id, "RESOLVED")
+                          }
+                          className="bg-emerald-700 hover:bg-emerald-600 px-3 py-1 rounded-lg text-sm"
+                        >
+                          Resolved
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(ticket.ticket_id, "CLOSED")
+                          }
+                          className="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-lg text-sm"
+                        >
+                          Closed
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

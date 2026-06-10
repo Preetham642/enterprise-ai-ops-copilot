@@ -2,6 +2,7 @@ from app.rag import load_documents, search_documents
 from app.database import init_db, get_all_tickets
 from app.database import get_ticket_metrics
 from fastapi import FastAPI
+from app.database import update_ticket_status
 from fastapi.middleware.cors import CORSMiddleware
 from app.rag_chat import ask_rag
 from app.tools.service_checker import check_service_status
@@ -124,6 +125,16 @@ def tickets():
 @app.get("/metrics")
 def metrics():
     return get_ticket_metrics()
+
+@app.put("/tickets/{ticket_id}/status")
+def update_status(ticket_id: str, status: str):
+    update_ticket_status(ticket_id, status)
+
+    return {
+        "ticket_id": ticket_id,
+        "status": status,
+        "message": "Ticket status updated successfully"
+    }
 
 @app.post("/chat")
 def chat(request: ChatRequest):
